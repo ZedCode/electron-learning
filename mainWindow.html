@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>To Do List</title>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+    </head>
+    <body>
+        <nav>
+            <div class="nav-wrapper grey darken-2">
+                <a class="brand-logo center">To Do List</a>
+            </div>
+        </nav>
+        <ul></ul>
+        <script>
+            const electron = require('electron');
+            const { ipcRenderer } = electron;
+            const ul = document.querySelector("ul");
+
+            // Handle adding an item
+            ipcRenderer.on('item:add', function (e, item) {
+                // in some cases, we can send an empty list ([])
+                // so this ensures that an empty list won't render
+                if (item.length != 0) {
+                    ul.innerHTML = '';
+                    ul.className = '';
+                    item.forEach(setItems);
+                }
+            });
+
+            function setItems (item, index) {
+                ul.className = 'collection';
+                const li  = document.createElement('li');
+                const itemText = document.createTextNode(item);
+                li.className = 'collection-item';
+                li.appendChild(itemText);
+                ul.appendChild(li);
+            }
+            // Handle clearing all items
+            ipcRenderer.on('item:clear', function () {
+                ul.innerHTML = '';
+                ul.className = '';
+            })
+
+            // Handle removing individual items
+            ul.addEventListener('dblclick', removeItem);
+            function removeItem (e) {
+                e.target.remove();
+                if (ul.children.length === 0) {
+                    ul.className = '';
+                }
+                // Now we need to build a new array
+                // based on this updated list
+                const allElements = document.querySelectorAll('li');
+                const newArray = [];
+                allElements.forEach( function (item, elem) {
+                    newArray.push(item.innerHTML);
+                });
+                ipcRenderer.send('item:setall', newArray);
+            }
+        </script>
+    </body>
+</html>
